@@ -26,6 +26,7 @@ android {
 dependencies {
     // Orange Cloud SDK depends of Android Volley
     compile 'com.android.volley:volley:1.0.+'
+    compile 'commons-io:commons-io:2.2'
 }
 
 // build a jar with source files

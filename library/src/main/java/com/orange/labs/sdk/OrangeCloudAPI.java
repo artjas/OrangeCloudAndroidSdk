@@ -31,13 +31,17 @@ import android.util.Log;
 import com.android.volley.Request.Method;
 import com.android.volley.Response;
 import com.android.volley.toolbox.ImageLoader.ImageCache;
+import com.orange.labs.sdk.exception.OrangeCloudOperationException;
 import com.orange.labs.sdk.exception.OrangeAPIException;
+import com.orange.labs.sdk.exception.SynchronusException;
 import com.orange.labs.sdk.session.Session;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.ParseException;
@@ -748,6 +752,84 @@ public final class OrangeCloudAPI<SESS_T extends Session> {
         Log.v("Authorization: ", "Bearer " + getSession().getAccessToken());
         Log.v("X-OAPI-Agent:", "Android-" + SDK_VERSION);
         return headers;
+    }
+
+
+    /**
+     * Synchronus file upload to the Orange Cloud
+     *
+     * @param fileUri  Uri of file to upload
+     * @param parentId unique identifier of the parent folder
+     * @param filename name of file to upload
+     */
+    public void uploadFileSynchronus(final Uri fileUri, final String parentId, final String filename) throws OrangeCloudOperationException, OrangeAPIException {
+        try {
+            URL url = null;
+            if(null!=parentId) url = new URL(API_CONTENT_URL + API_VERSION + "/files/content?name=" + filename + "&folder=" + parentId);
+            else url = new URL(API_CONTENT_URL + API_VERSION + "/files/content?name=" + filename);
+            session.getRestClient().uploadRequestSynchronus(url, fileUri, getHeaders());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            throw new OrangeCloudOperationException(e);
+        }
+    }
+
+    /**
+     * Synchronus file download from the Orange Cloud
+     *
+     * @param fileId unique identifier of the file
+     * @param folder name of folder to download
+     */
+    public void downloadFileSynchronus(String fileId, String folder) throws OrangeCloudOperationException {
+        URL url;
+        try {
+            url = new URL(API_URL + API_VERSION + "/files/"+fileId);
+            session.getRestClient().downloadRequestSynchronus(url, folder, getHeaders());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            throw new OrangeCloudOperationException(e);
+        }
+    }
+
+    /**
+     * Synchronus stream upload to the Orange Cloud
+     *
+     * @param parentId unique identifier of the parent folder
+     * @param filename name of file to upload
+     * @param inputStream input stream of file to upload
+     * @return success or failure
+     */
+    public void uploadStreamSynchronus(final String parentId, final String filename, InputStream inputStream) throws OrangeCloudOperationException, OrangeAPIException {
+        try {
+            URL url = null;
+            if(null!=parentId) url = new URL(API_CONTENT_URL + API_VERSION + "/files/content?name=" + filename + "&folder=" + parentId);
+            else url = new URL(API_CONTENT_URL + API_VERSION + "/files/content?name=" + filename);
+            session.getRestClient().uploadRequestStreamSynchronus(url, inputStream, getHeaders());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            throw new OrangeCloudOperationException(e);
+        }
+    }
+
+    public void downloadStreamSynchronus(String fileId, OutputStream outputStream) throws OrangeCloudOperationException {
+        try {
+            URL url = new URL(API_URL + API_VERSION + "/files/"+fileId);
+            session.getRestClient().downloadRequestStreamSynchronus(url, outputStream, getHeaders());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            throw new OrangeCloudOperationException(e);
+        }
+    }
+
+    public JSONObject listFolderSynchronus(String folderId) throws SynchronusException {
+        String tag = "Cloud/folder/list/";
+        String url = API_URL + API_VERSION + "/folders/";
+        if(null!=folderId) {
+            tag+=folderId;
+            url+=folderId;
+        }
+
+        return session.getRestClient().jsonRequestSynchronus(tag, url, getHeaders());
     }
 
     /**
